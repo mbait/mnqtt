@@ -63,6 +63,13 @@ struct mnqtt_hdr
   uint8_t flags;
 };
 
+struct mnqtt_cb
+{
+  void (*con_cb) (struct mnqtt *, uint8_t );				
+  void (*ack_cb) (struct mnqtt *, uint8_t, uint16_t, const uint8_t *);
+  void (*msg_cb) (struct mnqtt *, struct mnqtt_hdr *, struct mnqtt_msg *);
+  void (*err_cb) (struct mnqtt *);
+}
 
 struct mnqtt
 {
@@ -70,12 +77,7 @@ struct mnqtt
   ssize_t (*send) (const void *buf, size_t len);
   ssize_t (*sendv) (const struct iovec *, int);
 #endif  
-  /* callbacks */							
-  void (*conn_cb) (struct mnqtt *, uint8_t );				
-  void (*ack_cb)  (struct mnqtt *, uint8_t, uint16_t, const uint8_t *);
-  void (*msg_cb)  (struct mnqtt *, struct mnqtt_hdr *, struct mnqtt_msg *);
-  void (*err_cb)  (struct mnqtt *);
-    
+  struct mnqtt_cb cb;  
   void *user;
 
   uint8_t msg_type_flags;
@@ -116,14 +118,14 @@ ssize_t mnqtt_ping (struct mnqtt *);
  * there is stack overflow.
  */
 ssize_t mnqtt_sub (struct mnqtt *, struct mnqtt_hdr *,
-		   struct mnqtt_str *, uint8_t *, size_t);
+	 	               struct mnqtt_str *, uint8_t *, size_t);
 /**
  * If topics data cannot be fit into stack, the result will be the same as when
  * there is stack overflow.
  */
 ssize_t mnqtt_uns (struct mnqtt *, struct mnqtt_hdr *,
-		   struct mnqtt_str *, size_t);
+                   struct mnqtt_str *, size_t);
 ssize_t mnqtt_pub (struct mnqtt *, const struct mnqtt_hdr *,
-		   const struct mnqtt_msg *);
+                   const struct mnqtt_msg *);
 
 #endif	/* MNQTT_H */
