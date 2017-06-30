@@ -1,7 +1,7 @@
 #include "config.h"
 #include "mnqtt.h"
 
-#include <arpa/inet.h>		/* For ntohs/htons. */
+#include <netinet/in.h>		/* For ntohs/htons. */
 
 
 #ifdef ARRAY_SIZE
@@ -32,15 +32,15 @@ parse_connack (struct mnqtt *mnqtt, uint8_t *buf, size_t n)
 static void
 send_ack (struct mnqtt *mnqtt, int type, uint16_t mid)
 {
-  uint16_t fixed_header [2] = { htons (type << 4 << 8 | 2), mid };  
+  uint16_t fixed_header [2] = { htons (type << 4 << 8 | 2), mid };
   MNQTT_SEND (fixed_header, sizeof fixed_header);
 }
 
 
 static void
 parse_publish (struct mnqtt *mnqtt, uint8_t *buf, size_t n)
-{  
-  /* TODO: message identifiers are only present if QoS > 0 */ 
+{
+  /* TODO: message identifiers are only present if QoS > 0 */
   size_t topic_len = ntohs (* (uint16_t *) mnqtt->var_header);
 
   struct mnqtt_hdr hdr = {
@@ -94,7 +94,7 @@ static uint8_t parse_idx [] = { 0, 0, 1, 2, 3, 4, 4, 3, 0, 3, 0, 3, 0, 3, 0, 0 }
 
 /* 0, 3, 0, 3, 0, 3, 0, 0 */
 /* 0, 0, 1, 2, 3, 4, 4, 3, */
-  
+
 
 size_t
 mnqtt_recv (struct mnqtt *mnqtt, const void *data, size_t n)
@@ -127,7 +127,7 @@ mnqtt_recv (struct mnqtt *mnqtt, const void *data, size_t n)
 
 static size_t
 enc_rem_len (uint8_t *rem_len, int32_t len)
-{  
+{
   uint8_t *p = rem_len + 1;
   size_t n = 0;
   for (;;) {
@@ -136,7 +136,7 @@ enc_rem_len (uint8_t *rem_len, int32_t len)
     ++n;
     if (len == 0) break;
     *p |= 0x80;
-  } 
+  }
   return n;
 }
 
@@ -150,19 +150,19 @@ mnqtt_conn (struct mnqtt *mnqtt, struct mnqtt_conn *conn)
   uint8_t var_header [] = "\x00\x06MQIsdp\x03\x00\x00\x00";
   var_header [9] = conn->flags << 2;
   * (uint16_t *) &var_header [10] = htons (conn->timeout);
-  
+
   /* headers + payload */
   /* TODO: constant 2, while can not be present in header */
-  
+
   int32_t rem_len = sizeof var_header + conn->id->len +
     2 + conn->will.topic->len +
     2 + conn->will.size;
-  
+
   uint8_t fixed_header [5] = { MQTT_TYPE_CONNECT << 4 | conn->flags };
 
   struct mnqtt_msg *will = &conn->will;
   will->size = htons (will->size);
-  
+
   struct iovec iov [] = {
     { fixed_header, enc_rem_len (fixed_header, rem_len) },
     { var_header, sizeof var_header },
@@ -189,7 +189,7 @@ mnqtt_ping (struct mnqtt *mnqtt)
 ssize_t
 mnqtt_disc (struct mnqtt *mnqtt)
 {
-  static const uint8_t fixed_header [2] = { MQTT_TYPE_DISCONNECT << 4, 0 };  
+  static const uint8_t fixed_header [2] = { MQTT_TYPE_DISCONNECT << 4, 0 };
   return MNQTT_SEND (fixed_header, sizeof fixed_header);
 }
 
@@ -222,7 +222,7 @@ mnqtt_uns (struct mnqtt *mnqtt, struct mnqtt_hdr *hdr,
   struct iovec iov [3 * n + 1];
 
   iov [0].iov_base = &hdr->mid;
-  iov [0].iov_len = sizeof hdr->mid;  
+  iov [0].iov_len = sizeof hdr->mid;
 
   int i;
   for (i = 0; i < n; ++i) {
@@ -239,7 +239,7 @@ ssize_t
 mnqtt_pub (struct mnqtt * mnqtt,
 	   const struct mnqtt_hdr *hdr, const struct mnqtt_msg *msg)
 {
-  int32_t rem_len = 2 + msg->topic->len + sizeof hdr->mid + msg->size;  
+  int32_t rem_len = 2 + msg->topic->len + sizeof hdr->mid + msg->size;
   uint8_t fixed_header [5] = { MQTT_TYPE_PUBLISH << 4 | hdr->flags };
 
   struct iovec iov [] = {
